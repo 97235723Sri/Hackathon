@@ -1,0 +1,120 @@
+<div class="control-panel-container">
+  <h2>Control Panel</h2>
+
+  <!-- Button Selection View -->
+  <div class="button-grid" *ngIf="!selectedButton">
+    <div *ngFor="let category of getCategories()" class="category-section">
+      <h3 class="category-title">{{ category }}</h3>
+      <div class="button-cards">
+        <div *ngFor="let button of getButtonsByCategory()[category]" 
+             class="button-card" 
+             (click)="selectButton(button)">
+          <div class="button-card-icon" *ngIf="button.icon">{{ button.icon }}</div>
+          <div class="button-card-label">{{ button.label }}</div>
+          <div class="button-card-method">{{ button.httpMethod }}</div>
+        </div>
+      </div>
+    </div>
+
+    <p *ngIf="buttons.length === 0" class="no-buttons">
+      No active buttons available. Please configure buttons first.
+    </p>
+  </div>
+
+  <!-- Button Execution View -->
+  <div class="execution-panel" *ngIf="selectedButton && !executionResult">
+    <button class="btn btn-secondary btn-back" (click)="back()">← Back to Buttons</button>
+
+    <div class="button-details">
+      <h3>
+        <span class="button-icon" *ngIf="selectedButton.icon">{{ selectedButton.icon }}</span>
+        {{ selectedButton.label }}
+      </h3>
+      <p class="endpoint-info">
+        <span class="badge badge-method">{{ selectedButton.httpMethod }}</span>
+        {{ selectedButton.targetEndpoint }}
+      </p>
+    </div>
+
+    <div class="parameters-section">
+      <h4>Input Parameters</h4>
+      
+      <div *ngIf="getParameterKeys().length === 0" class="no-parameters">
+        No parameters defined. 
+        <button class="btn btn-sm btn-secondary" (click)="addParameter()">Add Parameter</button>
+      </div>
+
+      <div *ngIf="getParameterKeys().length > 0">
+        <div class="parameter-item" *ngFor="let key of getParameterKeys()">
+          <label>{{ key }}</label>
+          <input 
+            type="text" 
+            [(ngModel)]="inputParameters[key]" 
+            class="form-control"
+            placeholder="Enter value">
+          <button class="btn btn-sm btn-danger" (click)="removeParameter(key)">Remove</button>
+        </div>
+        <button class="btn btn-sm btn-secondary" (click)="addParameter()">Add Parameter</button>
+      </div>
+    </div>
+
+    <div class="action-buttons">
+      <button 
+        class="btn btn-primary" 
+        (click)="executeButton(false)" 
+        [disabled]="isExecuting">
+        {{ isExecuting ? 'Executing...' : 'Execute' }}
+      </button>
+      
+      <button 
+        *ngIf="selectedButton.previewEnabled"
+        class="btn btn-secondary" 
+        (click)="executeButton(true)" 
+        [disabled]="isExecuting">
+        {{ isExecuting ? 'Previewing...' : 'Preview/Test' }}
+      </button>
+    </div>
+
+    <div class="loading-spinner" *ngIf="isExecuting">
+      <div class="spinner"></div>
+      <p>Executing request...</p>
+    </div>
+  </div>
+
+  <!-- Execution Result View -->
+  <div class="result-panel" *ngIf="executionResult">
+    <button class="btn btn-secondary btn-back" (click)="back()">← Back to Buttons</button>
+
+    <div class="result-header" [class.success]="executionResult.success" [class.error]="!executionResult.success">
+      <h3>Execution Result</h3>
+      <span class="status-badge" [class.success]="executionResult.success" [class.error]="!executionResult.success">
+        {{ executionResult.success ? 'SUCCESS' : 'FAILED' }}
+      </span>
+    </div>
+
+    <div class="result-info">
+      <div class="info-item" *ngIf="isPreviewMode">
+        <strong>Mode:</strong> <span class="preview-badge">PREVIEW</span>
+      </div>
+      <div class="info-item">
+        <strong>Message:</strong> {{ executionResult.message }}
+      </div>
+      <div class="info-item" *ngIf="executionResult.statusCode">
+        <strong>HTTP Status:</strong> {{ executionResult.statusCode }}
+      </div>
+      <div class="info-item" *ngIf="executionResult.executionTimeMs">
+        <strong>Execution Time:</strong> {{ executionResult.executionTimeMs }} ms
+      </div>
+    </div>
+
+    <div class="result-data" *ngIf="executionResult.data">
+      <h4>Response Data</h4>
+      <pre class="json-output">{{ formatJsonOutput(executionResult.data) }}</pre>
+    </div>
+
+    <div class="result-actions">
+      <button class="btn btn-primary" (click)="closeResult()">Execute Again</button>
+      <button class="btn btn-secondary" (click)="back()">Back to Buttons</button>
+    </div>
+  </div>
+</div>
