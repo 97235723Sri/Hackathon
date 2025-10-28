@@ -1,0 +1,140 @@
+import { Component, OnInit } from '@angular/core';
+import { ControlPanelService } from '../../services/control-panel.service';
+import { ControlButton, ExecuteButtonRequest, ExecuteButtonResponse } from '../../models/button.model';
+
+@Component({
+  selector: 'app-control-panel',
+  templateUrl: './control-panel.component.html',
+  styleUrls: ['./control-panel.component.css']
+})
+export class ControlPanelComponent implements OnInit {
+  buttons: ControlButton[] = [];
+  selectedButton: ControlButton | null = null;
+  inputParameters: { [key: string]: any } = {};
+  executionResult: ExecuteButtonResponse | null = null;
+  isExecuting = false;
+  isPreviewMode = false;
+
+  constructor(private controlPanelService: ControlPanelService) {}
+
+  ngOnInit(): void {
+    this.loadButtons();
+  }
+
+  loadButtons(): void {
+    this.controlPanelService.getAllButtons().subscribe({
+      next: (buttons) => {
+        this.buttons = buttons.filter(b => b.active);
+      },
+      error: (error) => {
+        console.error('Error loading buttons:', error);
+        alert('Failed to load buttons');
+      }
+    });
+  }
+
+  selectButton(button: ControlButton): void {
+    this.selectedButton = button;
+    this.executionResult = null;
+    this.isPreviewMode = false;
+    
+    // Initialize input parameters from button configuration
+    if (button.payloadParameters) {
+      this.inputParameters = { ...button.payloadParameters };
+    } else {
+      this.inputParameters = {};
+    }
+  }
+
+  executeButton(preview: boolean = false): void {
+    if (!this.selectedButton) {
+      return;
+    }
+
+    // Validate if validation is enabled
+    if (this.selectedButton.validationEnabled && this.selectedButton.validationSchema) {
+      // Here you would implement JSON schema validation
+      // For now, we'll just proceed
+    }
+
+    this.isExecuting = true;
+    this.isPreviewMode = preview;
+
+    const request: ExecuteButtonRequest = {
+      inputParameters: this.inputParameters,
+      isPreview: preview
+    };
+
+    this.controlPanelService.executeButton(this.selectedButton.id!, request).subscribe({
+      next: (response) => {
+        this.executionResult = response;
+        this.isExecuting = false;
+        
+        if (!preview) {
+          // Reload buttons to update lastExecutedAt
+          this.loadButtons();
+        }
+      },
+      error: (error) => {
+        console.error('Error executing button:', error);
+        this.executionResult = {
+          success: false,
+          message: 'Execution failed: ' + (error.error?.message || error.message),
+          data: null
+        };
+        this.isExecuting = false;
+      }
+    });
+  }
+
+  addParameter(): void {
+    const key = prompt('Enter parameter name:');
+    if (key && key.trim()) {
+      this.inputParameters[key.trim()] = '';
+    }
+  }
+
+  removeParameter(key: string): void {
+    delete this.inputParameters[key];
+  }
+
+  getParameterKeys(): string[] {
+    return Object.keys(this.inputParameters);
+  }
+
+  formatJsonOutput(data: any): string {
+    try {
+      return JSON.stringify(data, null, 2);
+    } catch (e) {
+      return String(data);
+    }
+  }
+
+  closeResult(): void {
+    this.executionResult = null;
+  }
+
+  back(): void {
+    this.selectedButton = null;
+    this.inputParameters = {};
+    this.executionResult = null;
+  }
+
+  getButtonsByCategory(): { [category: string]: ControlButton[] } {
+    const grouped: { [category: string]: ControlButton[] } = {};
+    
+    this.buttons.forEach(button => {
+      const category = button.category || 'Uncategorized';
+      if (!grouped[category]) {
+        grouped[category] = [];
+      }
+      grouped[category].push(button);
+    });
+    
+    return grouped;
+  }
+
+  getCategories(): string[] {
+    return Object.keys(this.getButtonsByCategory()).sort();
+  }
+}
