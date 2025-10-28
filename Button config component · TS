@@ -1,0 +1,209 @@
+import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ControlPanelService } from '../../services/control-panel.service';
+import { 
+  ControlButton, 
+  ActionType, 
+  HttpMethod, 
+  OutputFormat,
+  CreateButtonRequest,
+  UpdateButtonRequest
+} from '../../models/button.model';
+
+@Component({
+  selector: 'app-button-config',
+  templateUrl: './button-config.component.html',
+  styleUrls: ['./button-config.component.css']
+})
+export class ButtonConfigComponent implements OnInit {
+  buttonForm: FormGroup;
+  buttons: ControlButton[] = [];
+  selectedButton: ControlButton | null = null;
+  isEditMode = false;
+  showForm = false;
+
+  // Enum options for dropdowns
+  actionTypes = Object.values(ActionType);
+  httpMethods = Object.values(HttpMethod);
+  outputFormats = Object.values(OutputFormat);
+
+  // JSON editors
+  headersJson = '{}';
+  payloadJson = '{}';
+
+  constructor(
+    private fb: FormBuilder,
+    private controlPanelService: ControlPanelService
+  ) {
+    this.buttonForm = this.createForm();
+  }
+
+  ngOnInit(): void {
+    this.loadButtons();
+  }
+
+  createForm(): FormGroup {
+    return this.fb.group({
+      label: ['', Validators.required],
+      icon: [''],
+      actionType: [ActionType.REST_API_CALL, Validators.required],
+      targetEndpoint: ['', Validators.required],
+      httpMethod: [HttpMethod.GET, Validators.required],
+      expectedOutputFormat: [OutputFormat.JSON, Validators.required],
+      validationEnabled: [true],
+      validationSchema: [''],
+      previewEnabled: [true],
+      category: [''],
+      active: [true]
+    });
+  }
+
+  loadButtons(): void {
+    this.controlPanelService.getAllButtons().subscribe({
+      next: (buttons) => {
+        this.buttons = buttons;
+      },
+      error: (error) => {
+        console.error('Error loading buttons:', error);
+        alert('Failed to load buttons');
+      }
+    });
+  }
+
+  showCreateForm(): void {
+    this.isEditMode = false;
+    this.selectedButton = null;
+    this.buttonForm.reset({
+      actionType: ActionType.REST_API_CALL,
+      httpMethod: HttpMethod.GET,
+      expectedOutputFormat: OutputFormat.JSON,
+      validationEnabled: true,
+      previewEnabled: true,
+      active: true
+    });
+    this.headersJson = '{}';
+    this.payloadJson = '{}';
+    this.showForm = true;
+  }
+
+  editButton(button: ControlButton): void {
+    this.isEditMode = true;
+    this.selectedButton = button;
+    this.showForm = true;
+
+    this.buttonForm.patchValue({
+      label: button.label,
+      icon: button.icon,
+      actionType: button.actionType,
+      targetEndpoint: button.targetEndpoint,
+      httpMethod: button.httpMethod,
+      expectedOutputFormat: button.expectedOutputFormat,
+      validationEnabled: button.validationEnabled,
+      validationSchema: button.validationSchema,
+      previewEnabled: button.previewEnabled,
+      category: button.category,
+      active: button.active
+    });
+
+    this.headersJson = button.headers ? JSON.stringify(button.headers, null, 2) : '{}';
+    this.payloadJson = button.payloadParameters ? JSON.stringify(button.payloadParameters, null, 2) : '{}';
+  }
+
+  saveButton(): void {
+    if (this.buttonForm.invalid) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    let headers = {};
+    let payloadParameters = {};
+
+    try {
+      headers = JSON.parse(this.headersJson);
+      payloadParameters = JSON.parse(this.payloadJson);
+    } catch (e) {
+      alert('Invalid JSON in headers or payload parameters');
+      return;
+    }
+
+    const formValue = this.buttonForm.value;
+
+    if (this.isEditMode && this.selectedButton) {
+      const updateRequest: UpdateButtonRequest = {
+        ...formValue,
+        headers,
+        payloadParameters
+      };
+
+      this.controlPanelService.updateButton(this.selectedButton.id!, updateRequest).subscribe({
+        next: () => {
+          alert('Button updated successfully');
+          this.loadButtons();
+          this.cancelEdit();
+        },
+        error: (error) => {
+          console.error('Error updating button:', error);
+          alert('Failed to update button');
+        }
+      });
+    } else {
+      const createRequest: CreateButtonRequest = {
+        ...formValue,
+        headers,
+        payloadParameters
+      };
+
+      this.controlPanelService.createButton(createRequest).subscribe({
+        next: () => {
+          alert('Button created successfully');
+          this.loadButtons();
+          this.cancelEdit();
+        },
+        error: (error) => {
+          console.error('Error creating button:', error);
+          alert('Failed to create button');
+        }
+      });
+    }
+  }
+
+  deleteButton(id: number): void {
+    if (!confirm('Are you sure you want to delete this button?')) {
+      return;
+    }
+
+    this.controlPanelService.deleteButton(id).subscribe({
+      next: () => {
+        alert('Button deleted successfully');
+        this.loadButtons();
+      },
+      error: (error) => {
+        console.error('Error deleting button:', error);
+        alert('Failed to delete button');
+      }
+    });
+  }
+
+  cancelEdit(): void {
+    this.showForm = false;
+    this.isEditMode = false;
+    this.selectedButton = null;
+    this.buttonForm.reset();
+    this.headersJson = '{}';
+    this.payloadJson = '{}';
+  }
+
+  formatJson(field: 'headers' | 'payload'): void {
+    try {
+      if (field === 'headers') {
+        const parsed = JSON.parse(this.headersJson);
+        this.headersJson = JSON.stringify(parsed, null, 2);
+      } else {
+        const parsed = JSON.parse(this.payloadJson);
+        this.payloadJson = JSON.stringify(parsed, null, 2);
+      }
+    } catch (e) {
+      alert('Invalid JSON format');
+    }
+  }
+}
