@@ -1,0 +1,338 @@
+# Application Control Panel
+
+A full-stack web application for creating, configuring, and executing control panel buttons that trigger backend APIs with customizable inputs.
+
+## Technology Stack
+
+### Backend
+- **Java 17**
+- **Spring Boot 3.2.0**
+- **PostgreSQL** - Database
+- **Spring Security** - RBAC Authentication
+- **Spring Data JPA** - ORM
+- **OkHttp** - HTTP Client for API calls
+- **Lombok** - Boilerplate code reduction
+
+### Frontend
+- **Angular 17**
+- **TypeScript**
+- **RxJS** - Reactive programming
+- **HttpClient** - API communication
+
+## Features
+
+### 1. Button Configuration Interface
+- Create, edit, and delete control panel buttons
+- Configure button properties:
+  - Label and icon
+  - Target API endpoint
+  - HTTP method (GET, POST, PUT, DELETE)
+  - Headers (JSON format)
+  - Payload parameters (JSON format)
+  - Expected output format (JSON, Plain Text, XML)
+  - Validation schema
+  - Preview/Test mode
+  - Category grouping
+
+### 2. Control Panel Execution Interface
+- Display configured buttons grouped by category
+- Execute button actions with custom input parameters
+- Real-time loading indicators
+- Display formatted responses
+- Error handling with detailed messages
+- Preview/Test mode before actual execution
+
+### 3. Backend Features
+- RESTful API endpoints
+- Role-based access control (RBAC)
+- Audit logging for all executions
+- PostgreSQL persistence
+- Request/Response tracking
+- Execution time measurement
+
+## Prerequisites
+
+### Backend
+- Java JDK 17 or higher
+- Maven 3.6+
+- PostgreSQL 14+
+
+### Frontend
+- Node.js 18+ and npm
+- Angular CLI 17+
+
+## Database Setup
+
+1. Install PostgreSQL and create a database:
+
+```sql
+CREATE DATABASE control_panel_db;
+```
+
+2. Update database credentials in `backend/src/main/resources/application.properties`:
+
+```properties
+spring.datasource.url=jdbc:postgresql://localhost:5432/control_panel_db
+spring.datasource.username=your_username
+spring.datasource.password=your_password
+```
+
+## Backend Setup
+
+1. Navigate to the backend directory:
+
+```bash
+cd backend
+```
+
+2. Build the project:
+
+```bash
+mvn clean install
+```
+
+3. Run the application:
+
+```bash
+mvn spring-boot:run
+```
+
+Or run the JAR file:
+
+```bash
+java -jar target/application-control-panel-1.0.0.jar
+```
+
+The backend will start on `http://localhost:8080`
+
+### Default Users
+
+- **User**: username=`user`, password=`password`, role=`USER`
+- **Admin**: username=`admin`, password=`admin`, roles=`ADMIN, USER`
+
+## Frontend Setup
+
+1. Navigate to the frontend directory:
+
+```bash
+cd frontend
+```
+
+2. Install dependencies:
+
+```bash
+npm install
+```
+
+3. Start the development server:
+
+```bash
+npm start
+```
+
+Or use Angular CLI:
+
+```bash
+ng serve
+```
+
+The frontend will start on `http://localhost:4200`
+
+## API Endpoints
+
+### Button Management
+
+- `GET /api/control-panel/buttons` - Get all buttons
+- `GET /api/control-panel/button/{id}` - Get button by ID
+- `POST /api/control-panel/button` - Create new button
+- `PUT /api/control-panel/button/{id}` - Update button
+- `DELETE /api/control-panel/button/{id}` - Delete button
+
+### Button Execution
+
+- `POST /api/control-panel/execute/{id}` - Execute button action
+
+### Example Create Button Request
+
+```json
+{
+  "label": "Restart Kubernetes Service",
+  "icon": "restart_alt",
+  "actionType": "REST_API_CALL",
+  "targetEndpoint": "https://api.example.com/k8s/service/restart",
+  "httpMethod": "POST",
+  "headers": {
+    "Authorization": "Bearer token",
+    "Content-Type": "application/json"
+  },
+  "payloadParameters": {
+    "serviceName": "my-service",
+    "namespace": "default"
+  },
+  "expectedOutputFormat": "JSON",
+  "validationEnabled": true,
+  "previewEnabled": true,
+  "category": "Kubernetes"
+}
+```
+
+### Example Execute Button Request
+
+```json
+{
+  "inputParameters": {
+    "serviceName": "my-service",
+    "namespace": "production"
+  },
+  "isPreview": false
+}
+```
+
+## Usage Guide
+
+### 1. Configure Buttons
+
+1. Navigate to "Button Configuration" page
+2. Click "Create New Button"
+3. Fill in the form:
+   - Enter a descriptive label
+   - Optional: Add a Material Icon name
+   - Select action type (REST_API_CALL)
+   - Enter the target API endpoint URL
+   - Select HTTP method
+   - Add headers as JSON (optional)
+   - Define payload parameters as JSON (optional)
+   - Select expected output format
+   - Choose a category for grouping
+   - Enable/disable validation and preview mode
+4. Click "Create" to save
+
+### 2. Execute Buttons
+
+1. Navigate to "Control Panel" page
+2. Buttons are displayed grouped by category
+3. Click on a button to select it
+4. Modify input parameters if needed
+5. Click "Preview/Test" to test without saving execution history
+6. Click "Execute" to run the actual API call
+7. View the formatted response
+
+### 3. Edit or Delete Buttons
+
+1. Go to "Button Configuration" page
+2. Find the button in the list
+3. Click "Edit" to modify or "Delete" to remove
+
+## Security
+
+- Basic Authentication is implemented (username/password)
+- All API endpoints require authentication
+- Role-based access control (RBAC)
+- Audit logging for all button executions
+- CORS configured for frontend origin
+
+### Production Security Recommendations
+
+1. Replace in-memory users with database-backed authentication
+2. Implement JWT tokens instead of Basic Auth
+3. Use HTTPS for all communications
+4. Implement rate limiting
+5. Add input validation and sanitization
+6. Use environment variables for sensitive configuration
+7. Implement proper secret management
+
+## Architecture
+
+### Backend Architecture
+
+```
+├── entity/
+│   ├── ControlButton.java    - Button entity with JPA mapping
+│   └── AuditLog.java          - Audit log entity
+├── repository/
+│   ├── ControlButtonRepository.java
+│   └── AuditLogRepository.java
+├── service/
+│   └── ControlButtonService.java  - Business logic
+├── controller/
+│   └── ControlPanelController.java - REST endpoints
+├── dto/
+│   └── ButtonDTO.java         - Request/Response DTOs
+├── config/
+│   ├── SecurityConfig.java    - Security configuration
+│   └── AppConfig.java         - Application beans
+└── exception/
+    └── GlobalExceptionHandler.java - Error handling
+```
+
+### Frontend Architecture
+
+```
+├── models/
+│   └── button.model.ts        - TypeScript interfaces
+├── services/
+│   └── control-panel.service.ts - API service
+├── components/
+│   ├── button-config/         - Button configuration component
+│   └── control-panel/         - Control panel execution component
+└── environments/
+    └── environment.ts         - Environment configuration
+```
+
+## Performance
+
+- Button execution timeout: 30 seconds
+- Target response time: < 2 seconds
+- Supports up to 100 buttons per user
+- Database connection pooling enabled
+- HTTP client connection pooling enabled
+
+## Troubleshooting
+
+### Backend Issues
+
+1. **Database Connection Error**
+   - Verify PostgreSQL is running
+   - Check database credentials
+   - Ensure database exists
+
+2. **Port Already in Use**
+   - Change port in `application.properties`: `server.port=8081`
+
+3. **Authentication Failures**
+   - Use correct credentials (user/password or admin/admin)
+   - Include Authorization header in requests
+
+### Frontend Issues
+
+1. **CORS Errors**
+   - Verify backend CORS configuration
+   - Check `app.cors.allowed-origins` in `application.properties`
+
+2. **API Connection Failed**
+   - Ensure backend is running on port 8080
+   - Check `environment.ts` for correct API URL
+
+3. **Port Already in Use**
+   - Change port: `ng serve --port 4201`
+
+## Future Enhancements
+
+- [ ] Advanced validation with JSON Schema
+- [ ] Webhook support
+- [ ] Scheduled button execution
+- [ ] Button execution history viewer
+- [ ] Export/Import button configurations
+- [ ] Multi-tenancy support
+- [ ] Approval workflow for maker-checker pattern
+- [ ] Advanced error handling and retry logic
+- [ ] Real-time execution notifications
+- [ ] Dashboard with execution statistics
+
+## License
+
+This project is provided as-is for educational and commercial use.
+
+## Support
+
+For issues, questions, or contributions, please refer to the project documentation or contact the development team.
