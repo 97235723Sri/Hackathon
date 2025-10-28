@@ -1,0 +1,147 @@
+<div class="button-config-container">
+  <h2>Button Configuration</h2>
+
+  <button class="btn btn-primary" (click)="showCreateForm()" *ngIf="!showForm">
+    Create New Button
+  </button>
+
+  <!-- Button Form -->
+  <div class="form-container" *ngIf="showForm">
+    <h3>{{ isEditMode ? 'Edit Button' : 'Create New Button' }}</h3>
+    
+    <form [formGroup]="buttonForm" (ngSubmit)="saveButton()">
+      <div class="form-group">
+        <label for="label">Label *</label>
+        <input type="text" id="label" formControlName="label" class="form-control" placeholder="e.g., Restart Service">
+      </div>
+
+      <div class="form-group">
+        <label for="icon">Icon (optional)</label>
+        <input type="text" id="icon" formControlName="icon" class="form-control" placeholder="e.g., restart_alt">
+      </div>
+
+      <div class="form-group">
+        <label for="actionType">Action Type *</label>
+        <select id="actionType" formControlName="actionType" class="form-control">
+          <option *ngFor="let type of actionTypes" [value]="type">{{ type }}</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="targetEndpoint">Target API Endpoint *</label>
+        <input type="text" id="targetEndpoint" formControlName="targetEndpoint" class="form-control" 
+               placeholder="e.g., https://api.example.com/service/restart">
+      </div>
+
+      <div class="form-group">
+        <label for="httpMethod">HTTP Method *</label>
+        <select id="httpMethod" formControlName="httpMethod" class="form-control">
+          <option *ngFor="let method of httpMethods" [value]="method">{{ method }}</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="headers">Headers (JSON)</label>
+        <textarea id="headers" [(ngModel)]="headersJson" [ngModelOptions]="{standalone: true}" 
+                  class="form-control json-editor" rows="4" 
+                  placeholder='{"Content-Type": "application/json"}'></textarea>
+        <button type="button" class="btn btn-sm btn-secondary" (click)="formatJson('headers')">Format JSON</button>
+      </div>
+
+      <div class="form-group">
+        <label for="payload">Payload Parameters (JSON)</label>
+        <textarea id="payload" [(ngModel)]="payloadJson" [ngModelOptions]="{standalone: true}" 
+                  class="form-control json-editor" rows="4" 
+                  placeholder='{"serviceName": "my-service", "replicas": 3}'></textarea>
+        <button type="button" class="btn btn-sm btn-secondary" (click)="formatJson('payload')">Format JSON</button>
+      </div>
+
+      <div class="form-group">
+        <label for="expectedOutputFormat">Expected Output Format *</label>
+        <select id="expectedOutputFormat" formControlName="expectedOutputFormat" class="form-control">
+          <option *ngFor="let format of outputFormats" [value]="format">{{ format }}</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="category">Category (optional)</label>
+        <input type="text" id="category" formControlName="category" class="form-control" placeholder="e.g., Kubernetes">
+      </div>
+
+      <div class="form-group checkbox-group">
+        <label>
+          <input type="checkbox" formControlName="validationEnabled">
+          Enable Validation
+        </label>
+      </div>
+
+      <div class="form-group" *ngIf="buttonForm.get('validationEnabled')?.value">
+        <label for="validationSchema">Validation Schema (JSON Schema)</label>
+        <textarea id="validationSchema" formControlName="validationSchema" class="form-control" rows="3"></textarea>
+      </div>
+
+      <div class="form-group checkbox-group">
+        <label>
+          <input type="checkbox" formControlName="previewEnabled">
+          Enable Preview/Test Mode
+        </label>
+      </div>
+
+      <div class="form-group checkbox-group" *ngIf="isEditMode">
+        <label>
+          <input type="checkbox" formControlName="active">
+          Active
+        </label>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">{{ isEditMode ? 'Update' : 'Create' }}</button>
+        <button type="button" class="btn btn-secondary" (click)="cancelEdit()">Cancel</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Buttons List -->
+  <div class="buttons-list" *ngIf="!showForm">
+    <h3>Existing Buttons</h3>
+    
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Label</th>
+            <th>Endpoint</th>
+            <th>Method</th>
+            <th>Category</th>
+            <th>Status</th>
+            <th>Last Executed</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let button of buttons">
+            <td>
+              <span class="button-icon" *ngIf="button.icon">{{ button.icon }}</span>
+              {{ button.label }}
+            </td>
+            <td>{{ button.targetEndpoint }}</td>
+            <td><span class="badge badge-method">{{ button.httpMethod }}</span></td>
+            <td>{{ button.category || '-' }}</td>
+            <td>
+              <span class="badge" [class.badge-success]="button.active" [class.badge-danger]="!button.active">
+                {{ button.active ? 'Active' : 'Inactive' }}
+              </span>
+            </td>
+            <td>{{ button.lastExecutedAt | date:'short' || 'Never' }}</td>
+            <td class="actions">
+              <button class="btn btn-sm btn-info" (click)="editButton(button)">Edit</button>
+              <button class="btn btn-sm btn-danger" (click)="deleteButton(button.id!)">Delete</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      
+      <p *ngIf="buttons.length === 0" class="no-data">No buttons configured yet.</p>
+    </div>
+  </div>
+</div>
