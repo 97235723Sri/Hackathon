@@ -1,0 +1,81 @@
+export enum ActionType {
+  REST_API_CALL = 'REST_API_CALL'
+}
+
+export enum HttpMethod {
+  GET = 'GET',
+  POST = 'POST',
+  PUT = 'PUT',
+  DELETE = 'DELETE'
+}
+
+export enum OutputFormat {
+  JSON = 'JSON',
+  PLAIN_TEXT = 'PLAIN_TEXT',
+  XML = 'XML'
+}
+
+export interface ControlButton {
+  id?: number;
+  label: string;
+  icon?: string;
+  actionType: ActionType;
+  targetEndpoint: string;
+  httpMethod: HttpMethod;
+  headers?: { [key: string]: string };
+  payloadParameters?: { [key: string]: any };
+  expectedOutputFormat: OutputFormat;
+  validationEnabled?: boolean;
+  validationSchema?: string;
+  previewEnabled?: boolean;
+  createdBy?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+  lastExecutedAt?: Date;
+  category?: string;
+  active?: boolean;
+}
+
+export interface CreateButtonRequest {
+  label: string;
+  icon?: string;
+  actionType: ActionType;
+  targetEndpoint: string;
+  httpMethod: HttpMethod;
+  headers?: { [key: string]: string };
+  payloadParameters?: { [key: string]: any };
+  expectedOutputFormat: OutputFormat;
+  validationEnabled?: boolean;
+  validationSchema?: string;
+  previewEnabled?: boolean;
+  category?: string;
+}
+
+export interface UpdateButtonRequest {
+  label?: string;
+  icon?: string;
+  actionType?: ActionType;
+  targetEndpoint?: string;
+  httpMethod?: HttpMethod;
+  headers?: { [key: string]: string };
+  payloadParameters?: { [key: string]: any };
+  expectedOutputFormat?: OutputFormat;
+  validationEnabled?: boolean;
+  validationSchema?: string;
+  previewEnabled?: boolean;
+  category?: string;
+  active?: boolean;
+}
+
+export interface ExecuteButtonRequest {
+  inputParameters?: { [key: string]: any };
+  isPreview?: boolean;
+}
+
+export interface ExecuteButtonResponse {
+  success: boolean;
+  message: string;
+  data?: any;
+  statusCode?: number;
+  executionTimeMs?: number;
+}
