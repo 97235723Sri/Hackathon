@@ -1,0 +1,79 @@
+import { Injectable } from '@angular/core';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { 
+  ControlButton, 
+  CreateButtonRequest, 
+  UpdateButtonRequest, 
+  ExecuteButtonRequest, 
+  ExecuteButtonResponse 
+} from '../models/button.model';
+import { environment } from '../../environments/environment';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class ControlPanelService {
+  private apiUrl = environment.apiUrl;
+
+  constructor(private http: HttpClient) {}
+
+  // Get HTTP options with basic auth
+  private getHttpOptions(): { headers: HttpHeaders } {
+    const username = 'user';
+    const password = 'password';
+    const basicAuth = 'Basic ' + btoa(`${username}:${password}`);
+    
+    return {
+      headers: new HttpHeaders({
+        'Content-Type': 'application/json',
+        'Authorization': basicAuth
+      })
+    };
+  }
+
+  getAllButtons(): Observable<ControlButton[]> {
+    return this.http.get<ControlButton[]>(
+      `${this.apiUrl}/control-panel/buttons`, 
+      this.getHttpOptions()
+    );
+  }
+
+  getButtonById(id: number): Observable<ControlButton> {
+    return this.http.get<ControlButton>(
+      `${this.apiUrl}/control-panel/button/${id}`, 
+      this.getHttpOptions()
+    );
+  }
+
+  createButton(request: CreateButtonRequest): Observable<ControlButton> {
+    return this.http.post<ControlButton>(
+      `${this.apiUrl}/control-panel/button`, 
+      request, 
+      this.getHttpOptions()
+    );
+  }
+
+  updateButton(id: number, request: UpdateButtonRequest): Observable<ControlButton> {
+    return this.http.put<ControlButton>(
+      `${this.apiUrl}/control-panel/button/${id}`, 
+      request, 
+      this.getHttpOptions()
+    );
+  }
+
+  deleteButton(id: number): Observable<void> {
+    return this.http.delete<void>(
+      `${this.apiUrl}/control-panel/button/${id}`, 
+      this.getHttpOptions()
+    );
+  }
+
+  executeButton(id: number, request: ExecuteButtonRequest): Observable<ExecuteButtonResponse> {
+    return this.http.post<ExecuteButtonResponse>(
+      `${this.apiUrl}/control-panel/execute/${id}`, 
+      request, 
+      this.getHttpOptions()
+    );
+  }
+}
